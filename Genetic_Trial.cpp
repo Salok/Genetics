@@ -21,8 +21,9 @@ int gen()
 };
 
 //Crea una lista inicial de cromosomas aleatorios.
-int iniciador(int generacion)
+void iniciador(int generacion)
 {
+	puts("Inicializando");
 	for(int i = 0; i<generacion; i++)
 	{
 		for(int j=0; j<9; j++)
@@ -87,7 +88,7 @@ float solve(int chromosome[9])
 float fitnessCalc(int chromosome[9])
 {
 	float fit;
-	float solution = solve(&chromosome[9]);
+	float solution = solve(&chromosome[0]);
 	if(solution != N)
 		fit = 1/(N-solution);
 	else
@@ -122,7 +123,6 @@ void mutate(int chromNum)
 int russianRoulette()
 {
 	int x;
-	int chromNum;
 	for (int i = 0; i<generacion; i++)
 	{
 		x += floor(100*fitness[i]);
@@ -133,13 +133,11 @@ int russianRoulette()
 	for(int i = 0; i<generacion; i++)
 	{
 		x -= floor(100*fitness[i]);
-		if(x<0)
+		if(x<0.0f)
 		{
-			chromNum = i;
-			break;
+			return i;
 		}
 	}
-	return chromNum;
 }
 
 //Survival of the fittest. Se elige a los cromosomas a reproducirse según su resultado.
@@ -184,7 +182,7 @@ int naturalSelection(int generacion)
 int main()
 {	
 	int gotcha = -1;
-
+	iniciador(10);
 	while (gotcha == -1)
 	{
 	gotcha = naturalSelection(generacion);

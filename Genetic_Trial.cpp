@@ -3,8 +3,10 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 int N = 42;
 int generacion = 10;
+
 // Diez cromosomas con nueve genes (cinco digitos y cuatro operaciones)
 int chromosome[10][9];
 int children[10][9];
@@ -14,9 +16,9 @@ float fitness[10];
 int gen()
 {
 	int x;
-	//Devuelve un valor aleatorio entre 0 y 13. Del 0 al 9 para los números, del 10 al 13
+	//Devuelve un valor aleatorio entre 1 y 13. Del 1 al 9 para los números, del 10 al 13
 	//para las operaciones. 
-	x = rand() % 14 ;
+	x = rand() % 13 + 1;
 	return x;
 };
 
@@ -36,52 +38,84 @@ void iniciador(int generacion)
 //Desencripta el cromosoma y devuelve su resultado.
 float solve(int chromosome[9])
 {
-	int solution;
-	int x = 0;
+	float x = 0.0f;
+	int j = 0;
+	int k = 0;
+	int count = 0;
+	int digits[5];
+	digits[0] = -1;
+	digits[1] = -1;
+	int operations[4];
+
+	//Dividimos el gen en operaciones y digitos.
 	for(int i = 0; i<9; i++)
 	{
-		//Si el gen es un número busca el suguiente operador y el siguiente número y opera.
-		//Si falla el resultado será cero.
-		if(chromosome[i] <= 9)
+		if(chromosome[i]>9 && count == 1)
 		{
-			for(int j = i; j<(9-i); j++)
+			if (j<4)
 			{
-				if (chromosome[j] > 9)
-				{
-					for(int k = j; k<(9-i-j); k++)
-					{
-						if (k <= 9)
-						{
-							switch(chromosome[j])
-							{
-								case 10:
-									x = chromosome[i]+chromosome[k];
-									break;
-
-								case 11:
-									x = chromosome[i] - chromosome[k];
-									break;
-
-								case 12:
-									x = chromosome[i]*chromosome[k];
-									break;
-
-								case 13:
-									x = chromosome[i]/chromosome[k];
-									break;
-							}
-							i = k+1;
-							break;
-						}
-					}
-					break;
-				}
+				operations[j] = chromosome[i];
+				j++;
+				count = 0;
 			}
 		}
-		solution += x;
+		else if(chromosome[i]<=9 && count == 0)
+		{
+			if(k<5)
+			{
+				digits[k] = chromosome[i];
+				k++;
+				count = 1;
+			}
+		}
+	}
+	for(int i = 0; i<k; i++)
+	{
+		printf("Gen_Digit %i: %i \n", i, digits[i]);
 	}
 
-	return solution;
+	for(int i = 0; i<j; i++)
+	{
+		printf("Gen_Op %i: %i \n", i, operations[i]);
+	}
+	//Por cada operacion cogemos la solución anterior y el siguiente digito
+	//y operamos.
+	if (digits[0] != -1 && digits[1] != -1)
+	{	
+		x = digits[0];
+		for (int i = 0; i<k; i++)
+		{
+
+			switch (operations[i])
+			{
+				case 10:
+					x += digits[i+1];
+					break;
+
+				case 11:
+					x -= digits[i+1];
+					break;
+
+				case 12:
+					x *= digits[i+1];
+					break;
+
+				case 13:
+					x /= digits[i+1]; 
+					break;
+
+				default:
+					break;
+			}
+		}
+	}
+
+	else if (digits[1] == -1)
+		x = digits[0];
+	else
+		x = 0;
+	return x;
+
 }
 
 //Devuelve un valor menor que uno que es mayor cuanto mejor sea el cromosoma.
@@ -89,10 +123,14 @@ float fitnessCalc(int chromosome[9])
 {
 	float fit;
 	float solution = solve(&chromosome[0]);
+	printf("Solution is: %f \n", solution);
 	if(solution != N)
 		fit = 1/(N-solution);
 	else
-		fit = 1.0f;
+		fit = 10.0f;
+	printf("Fitness is: %f \n", fit);
+	if(fit < 0)
+		fit *= -1;
 	return fit;
 };
 
@@ -121,21 +159,14 @@ void mutate(int chromNum)
 
 //Función que escoge un cromosoma al azar (biased by fitness)
 int russianRoulette()
-{
-	int x;
-	for (int i = 0; i<generacion; i++)
-	{
-		x += floor(100*fitness[i]);
-	}
+{	
 
-	x = rand() % x;
-
-	for(int i = 0; i<generacion; i++)
+	for(int i = 0; i<9; i++)
 	{
-		x -= floor(100*fitness[i]);
-		if(x<0.0f)
+		if(fitness[i] != 0.0f)
 		{
-			return i;
+			if(rand() % 1000 <= floor(fitness[i]*1000))
+				return i;
 		}
 	}
 }
@@ -150,8 +181,9 @@ int naturalSelection(int generacion)
 	float solved = 0.0f;
 	for(int i = 0; i<generacion; i++)
 	{
+		printf("chromosome %i: \n", i);
 		solved = fitnessCalc(chromosome[i]);
-		if(solved != 1.0f)
+		if(solved < 10.0f)
 			fitness[i] = solved;
 		else
 			return i;
@@ -170,17 +202,24 @@ int naturalSelection(int generacion)
 		}
 		if (x < 7)
 			crossingOver(i);
-		y = rand() % 1000;
-		if(y==0)
+		y = rand() % 100;
+		if(y == 99)
 			mutate(2*i);
 		else if (y == 1)
 			mutate(2*i+1);
 	}
+	for(int i = 0; i<10; i++)
+	{
+		for(int j = 0; j<9; j++)
+			chromosome[i][j] = children[i][j];
+	}
+	puts("Next generation \n ");
 	return -1;
 }
 
 int main()
 {	
+	srand(time(NULL));
 	int gotcha = -1;
 	iniciador(10);
 	while (gotcha == -1)

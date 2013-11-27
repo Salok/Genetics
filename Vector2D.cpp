@@ -1,3 +1,4 @@
+//Vectores para representar cosas en dos dimensiones.
 struct Vector2D
 {
 	double x, y;

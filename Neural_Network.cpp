@@ -193,7 +193,7 @@ class neuralNet
 		}
 };
 
-
+//Main para comprobar que la red neuronal funciona correctamente.
 int main()
 {
 	srand(time(NULL));
